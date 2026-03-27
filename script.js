@@ -116,13 +116,11 @@ function aggregateStats(games) {
     else if (g.result === 'Loss')  overall.losses++;
     else if (g.result === 'Draw')  overall.draws++;
 
-    // Exclude borrowed decks from per-deck breakdown
-    if (!g.isBorrowed) {
-      if (!byDeck[g.deck]) byDeck[g.deck] = { wins: 0, losses: 0, draws: 0 };
-      if (g.result === 'Win')        byDeck[g.deck].wins++;
-      else if (g.result === 'Loss')  byDeck[g.deck].losses++;
-      else if (g.result === 'Draw')  byDeck[g.deck].draws++;
-    }
+    // Include all decks (including borrowed) in per-deck breakdown
+    if (!byDeck[g.deck]) byDeck[g.deck] = { wins: 0, losses: 0, draws: 0 };
+    if (g.result === 'Win')        byDeck[g.deck].wins++;
+    else if (g.result === 'Loss')  byDeck[g.deck].losses++;
+    else if (g.result === 'Draw')  byDeck[g.deck].draws++;
   }
 
   overall.total = overall.wins + overall.losses + overall.draws;
@@ -168,8 +166,6 @@ function sortDeckStats(deckStats, sortKey) {
     sorted.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
   } else if (sortKey === 'most-played') {
     sorted.sort((a, b) => b.total - a.total || b.winRate - a.winRate);
-  } else if (sortKey === 'least-played') {
-    sorted.sort((a, b) => a.total - b.total || a.winRate - b.winRate);
   }
   return sorted;
 }
