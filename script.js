@@ -185,9 +185,10 @@ function buildChart(deckStats, sortKey) {
   const losses = sorted.map(d => d.losses);
   const draws  = sorted.map(d => d.draws);
 
-  const chartHeight = Math.max(300, sorted.length * 30);
+  const chartHeight = Math.max(300, sorted.length * 45);
   const canvas = document.getElementById('deckChart');
-  canvas.style.height = chartHeight + 'px';
+  const container = canvas.parentElement;
+  container.style.height = chartHeight + 'px';
 
   if (chartInstance) {
     chartInstance.destroy();
