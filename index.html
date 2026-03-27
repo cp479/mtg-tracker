@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MTG Win Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+
+  <header>
+    <h1>MTG Win Tracker</h1>
+    <p class="subtitle">Commander game history &amp; win rates</p>
+  </header>
+
+  <main>
+    <div id="loading">Loading game data...</div>
+    <div id="error" hidden></div>
+
+    <section id="summary-section" hidden>
+      <h2>Overall Stats</h2>
+      <div id="summary-cards">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Games Played</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value win" id="stat-wins">—</div>
+          <div class="stat-label">Wins</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value loss" id="stat-losses">—</div>
+          <div class="stat-label">Losses</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value draw" id="stat-draws">—</div>
+          <div class="stat-label">Draws</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-winrate">—</div>
+          <div class="stat-label">Win Rate</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="chart-section" hidden>
+      <h2>Win Rate by Deck</h2>
+      <p class="section-note">Decks with 2+ games played. Excludes borrowed decks.</p>
+      <div class="chart-container">
+        <canvas id="deckChart"></canvas>
+      </div>
+    </section>
+
+    <section id="table-section" hidden>
+      <h2>Game History</h2>
+      <p class="section-note">Newest games first.</p>
+      <div class="table-wrapper">
+        <table id="game-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Playing As</th>
+              <th>Opponents</th>
+              <th>Result</th>
+              <th>How</th>
+              <th>Final Play</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="game-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Data synced live from Google Sheets</p>
+  </footer>
+
+</body>
+</html>
