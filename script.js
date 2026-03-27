@@ -245,14 +245,15 @@ function buildChart(deckStats, sortKey) {
           labels: { color: '#e5e7eb', boxWidth: 14 },
         },
         tooltip: {
+          mode: 'index',
           callbacks: {
             label: ctx => {
-              const d = sorted[ctx.dataIndex];
-              if (ctx.datasetIndex === 0) {
-                return ` Wins: ${d.wins}  (${d.winRate}% win rate, ${d.total} games total)`;
-              }
-              if (ctx.datasetIndex === 1) return ` Losses: ${d.losses}`;
-              return ` Draws: ${d.draws}`;
+              const labels = ['Wins', 'Losses', 'Draws'];
+              return ` ${labels[ctx.datasetIndex]}: ${ctx.parsed.x}`;
+            },
+            footer: items => {
+              const d = sorted[items[0].dataIndex];
+              return `Win rate: ${d.winRate}%  (${d.total} games)`;
             }
           }
         }
@@ -266,7 +267,30 @@ function renderChart(deckStats) {
   document.getElementById('chart-section').hidden = false;
 }
 
-function renderTable(games) {
+// ── Scryfall colour identity ───────────────────────────────────────────────
+
+async function buildColorMap(deckNames) {
+  const map = new Map();
+  for (const name of deckNames) {
+    try {
+      const res = await fetch(
+        `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const ci = data.color_identity;
+        if (Array.isArray(ci) && ci.length > 0) {
+          map.set(name, ci.join(''));
+        }
+      }
+    } catch { /* skip — card not found or network error */ }
+    // Respect Scryfall's rate-limit guideline (50–100 ms between requests)
+    await new Promise(r => setTimeout(r, 60));
+  }
+  return map;
+}
+
+async function renderTable(games) {
   // Find most recent game date and calculate 3-month cutoff
   const validDates = games.map(g => g.parsedDate).filter(d => !isNaN(d));
   const maxDate = new Date(Math.max(...validDates));
@@ -277,6 +301,10 @@ function renderTable(games) {
     .reverse()
     .filter(g => !isNaN(g.parsedDate) && g.parsedDate >= cutoff);
 
+  // Fetch colour identity for each unique non-borrowed deck in the table
+  const uniqueDecks = [...new Set(recent.filter(g => !g.isBorrowed).map(g => g.deck))];
+  const colorMap = await buildColorMap(uniqueDecks);
+
   const tbody = document.getElementById('game-tbody');
 
   for (const g of recent) {
@@ -286,13 +314,18 @@ function renderTable(games) {
                      : g.result === 'Loss' ? 'badge-loss'
                      : 'badge-draw';
 
+    const colors = colorMap.get(g.deck);
+    const colorTag = colors
+      ? `<span class="color-tag">(${escapeHtml(colors)})</span>`
+      : '';
+
     const borrowedTag = g.isBorrowed
       ? '<span class="borrowed-tag">(borrowed)</span>'
       : '';
 
     tr.innerHTML = `
       <td style="white-space:nowrap">${escapeHtml(g.date)}</td>
-      <td>${escapeHtml(g.deck)}${borrowedTag}</td>
+      <td>${escapeHtml(g.deck)}${colorTag}${borrowedTag}</td>
       <td><span class="badge ${badgeClass}">${escapeHtml(g.result)}</span></td>
       <td>${escapeHtml(g.howWon) || '—'}</td>
     `;
