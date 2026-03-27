@@ -18,7 +18,8 @@ const EXCLUDED_DECKS = new Set([
 
 // Correct known typos / inconsistent spellings in the sheet
 const DECK_NAME_CORRECTIONS = {
-  'Xu-Ifit Osteoharmonist': 'Xu-Ifit, Osteoharmonist',
+  'Xu-Ifit Osteoharmonist':       'Xu-Ifit, Osteoharmonist',
+  'Valvagoth, Harrower of Souls': 'Valgavoth, Harrower of Souls',
 };
 
 // ── Deck name normalizer ──────────────────────────────────────────────────────
