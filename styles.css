@@ -108,6 +108,42 @@ section h2 {
   margin-top: 4px;
 }
 
+/* ── Chart sort controls ── */
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.sort-label {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.sort-btn {
+  background-color: #1f2937;
+  color: #9ca3af;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.sort-btn:hover {
+  background-color: #374151;
+  color: #e5e7eb;
+}
+
+.sort-btn.active {
+  background-color: #065f46;
+  color: #6ee7b7;
+  border-color: #34d399;
+}
+
 /* ── Chart ── */
 .chart-container {
   background-color: #1f2937;

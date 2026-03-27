@@ -8,6 +8,14 @@ const DATE_REGEX =
 
 const SUMMARY_REGEX = /^\d+\s+(win|loss|draw|game)/i;
 
+// Decks to exclude entirely from all stats (test entries)
+const EXCLUDED_DECKS = new Set(['Naya Aggro']);
+
+// Correct known typos / inconsistent spellings in the sheet
+const DECK_NAME_CORRECTIONS = {
+  'Xu-Ifit Osteoharmonist': 'Xu-Ifit, Osteoharmonist',
+};
+
 // ── Deck name normalizer ──────────────────────────────────────────────────────
 
 function normalizeDeckName(raw) {
@@ -25,12 +33,18 @@ function normalizeDeckName(raw) {
   // Strip trailing Final Fantasy set codes: (FF6), (FF10), (FF14)
   name = name.replace(/\s*\(FF\d+\)\s*$/, '');
 
-  // Strip trailing color code parentheticals: (WBG), (UR), (WU), (GW), (Jeskai Backup Commander), etc.
-  // Match a trailing paren group that is 1-7 uppercase letters only, or known commander role labels
+  // Strip trailing color code parentheticals: (WBG), (UR), (WU), (GW), etc.
   name = name.replace(/\s*\([A-Z]{1,7}\)\s*$/, '');
 
-  // Strip any remaining trailing whitespace
+  // Normalize " // " to " / " so variant spellings of the same deck merge
+  name = name.replace(/\s*\/\/\s*/g, ' / ');
+
   name = name.trim();
+
+  // Apply known name corrections
+  if (DECK_NAME_CORRECTIONS[name]) {
+    name = DECK_NAME_CORRECTIONS[name];
+  }
 
   return { name, isBorrowed };
 }
@@ -68,6 +82,7 @@ function parseRows(rows) {
     } else if (type === 'game') {
       const normalized = normalizeDeckName(row[0]);
       if (!normalized) continue;
+      if (EXCLUDED_DECKS.has(normalized.name)) continue;
 
       const opponents = [row[2], row[3], row[4], row[5]]
         .map(s => (s || '').trim())
@@ -75,6 +90,7 @@ function parseRows(rows) {
 
       games.push({
         date: currentDate,
+        parsedDate: new Date(currentDate),
         deck: normalized.name,
         isBorrowed: normalized.isBorrowed,
         opponents,
@@ -119,8 +135,7 @@ function aggregateStats(games) {
       const total = counts.wins + counts.losses + counts.draws;
       const winRate = total > 0 ? Math.round((counts.wins / total) * 100) : 0;
       return { name, ...counts, total, winRate };
-    })
-    .sort((a, b) => b.total - a.total);
+    });
 
   return { overall, deckStats };
 }
@@ -144,32 +159,63 @@ function renderSummaryCards(overall) {
   document.getElementById('summary-section').hidden = false;
 }
 
-function renderChart(deckStats) {
-  const filtered = deckStats.filter(d => d.total >= 2);
+// Chart instance kept here so we can destroy & recreate on sort change
+let chartInstance = null;
 
-  const labels   = filtered.map(d => d.name);
-  const winRates = filtered.map(d => d.winRate);
-  const colors   = winRates.map(r =>
-    r >= 50 ? 'rgba(16, 185, 129, 0.8)'
-    : r >= 30 ? 'rgba(245, 158, 11, 0.8)'
-    : 'rgba(239, 68, 68, 0.8)'
-  );
+function sortDeckStats(deckStats, sortKey) {
+  const sorted = [...deckStats];
+  if (sortKey === 'winrate') {
+    sorted.sort((a, b) => b.winRate - a.winRate || b.total - a.total);
+  } else if (sortKey === 'most-played') {
+    sorted.sort((a, b) => b.total - a.total || b.winRate - a.winRate);
+  } else if (sortKey === 'least-played') {
+    sorted.sort((a, b) => a.total - b.total || a.winRate - b.winRate);
+  }
+  return sorted;
+}
 
-  const chartHeight = Math.max(300, filtered.length * 28);
+function buildChart(deckStats, sortKey) {
+  const sorted = sortDeckStats(deckStats, sortKey);
+
+  const labels = sorted.map(d => d.name);
+  const wins   = sorted.map(d => d.wins);
+  const losses = sorted.map(d => d.losses);
+  const draws  = sorted.map(d => d.draws);
+
+  const chartHeight = Math.max(300, sorted.length * 30);
   const canvas = document.getElementById('deckChart');
   canvas.style.height = chartHeight + 'px';
 
+  if (chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null;
+  }
+
   const ctx = canvas.getContext('2d');
-  new Chart(ctx, {
+  chartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
       labels,
-      datasets: [{
-        label: 'Win Rate %',
-        data: winRates,
-        backgroundColor: colors,
-        borderRadius: 4,
-      }]
+      datasets: [
+        {
+          label: 'Wins',
+          data: wins,
+          backgroundColor: 'rgba(52, 211, 153, 0.85)',
+          borderRadius: 2,
+        },
+        {
+          label: 'Losses',
+          data: losses,
+          backgroundColor: 'rgba(6, 78, 59, 0.85)',
+          borderRadius: 2,
+        },
+        {
+          label: 'Draws',
+          data: draws,
+          backgroundColor: 'rgba(16, 124, 79, 0.5)',
+          borderRadius: 2,
+        },
+      ]
     },
     options: {
       responsive: true,
@@ -177,38 +223,68 @@ function renderChart(deckStats) {
       indexAxis: 'y',
       scales: {
         x: {
-          min: 0,
-          max: 100,
+          stacked: true,
           grid: { color: '#374151' },
-          ticks: { color: '#9ca3af', callback: v => v + '%' }
+          ticks: { color: '#9ca3af' },
+          title: { display: true, text: 'Games Played', color: '#9ca3af' },
         },
         y: {
+          stacked: true,
           grid: { color: '#2d3748' },
-          ticks: { color: '#e5e7eb', font: { size: 11 } }
+          ticks: { color: '#e5e7eb', font: { size: 11 } },
         }
       },
       plugins: {
-        legend: { display: false },
+        legend: {
+          display: true,
+          labels: { color: '#e5e7eb', boxWidth: 14 },
+        },
         tooltip: {
           callbacks: {
             label: ctx => {
-              const d = filtered[ctx.dataIndex];
-              return ` ${d.winRate}%  (${d.wins}W / ${d.losses}L / ${d.draws}D — ${d.total} games)`;
+              const d = sorted[ctx.dataIndex];
+              if (ctx.datasetIndex === 0) {
+                return ` Wins: ${d.wins}  (${d.winRate}% win rate, ${d.total} games total)`;
+              }
+              if (ctx.datasetIndex === 1) return ` Losses: ${d.losses}`;
+              return ` Draws: ${d.draws}`;
             }
           }
         }
       }
     }
   });
+}
+
+function renderChart(deckStats) {
+  buildChart(deckStats, 'winrate');
+
+  // Wire up sort buttons
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      buildChart(deckStats, btn.dataset.sort);
+    });
+  });
 
   document.getElementById('chart-section').hidden = false;
 }
 
 function renderTable(games) {
-  const tbody = document.getElementById('game-tbody');
-  const sorted = [...games].reverse();
+  // Find most recent game date and calculate 3-month cutoff
+  const validDates = games.map(g => g.parsedDate).filter(d => !isNaN(d));
+  const maxDate = new Date(Math.max(...validDates));
+  const cutoff = new Date(maxDate);
+  cutoff.setMonth(cutoff.getMonth() - 3);
 
-  for (const g of sorted) {
+  const recent = [...games]
+    .reverse()
+    .filter(g => !isNaN(g.parsedDate) && g.parsedDate >= cutoff);
+
+  const tbody = document.getElementById('game-tbody');
+
+  for (const g of recent) {
     const tr = document.createElement('tr');
 
     const badgeClass = g.result === 'Win'  ? 'badge-win'
@@ -229,8 +305,6 @@ function renderTable(games) {
       <td>${opponentsHtml}</td>
       <td><span class="badge ${badgeClass}">${escapeHtml(g.result)}</span></td>
       <td>${escapeHtml(g.howWon) || '—'}</td>
-      <td>${escapeHtml(g.finalPlay) || '—'}</td>
-      <td>${escapeHtml(g.notes) || '—'}</td>
     `;
     tbody.appendChild(tr);
   }

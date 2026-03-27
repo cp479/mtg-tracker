@@ -48,7 +48,13 @@
 
     <section id="chart-section" hidden>
       <h2>Win Rate by Deck</h2>
-      <p class="section-note">Decks with 2+ games played. Excludes borrowed decks.</p>
+      <p class="section-note">All tracked decks. Excludes borrowed decks.</p>
+      <div class="chart-controls">
+        <span class="sort-label">Sort by:</span>
+        <button class="sort-btn active" data-sort="winrate">Win Rate ↓</button>
+        <button class="sort-btn" data-sort="most-played">Most Played ↓</button>
+        <button class="sort-btn" data-sort="least-played">Least Played ↑</button>
+      </div>
       <div class="chart-container">
         <canvas id="deckChart"></canvas>
       </div>
@@ -56,7 +62,7 @@
 
     <section id="table-section" hidden>
       <h2>Game History</h2>
-      <p class="section-note">Newest games first.</p>
+      <p class="section-note" id="table-note">Most recent 3 months. Newest games first.</p>
       <div class="table-wrapper">
         <table id="game-table">
           <thead>
@@ -66,8 +72,6 @@
               <th>Opponents</th>
               <th>Result</th>
               <th>How</th>
-              <th>Final Play</th>
-              <th>Notes</th>
             </tr>
           </thead>
           <tbody id="game-tbody"></tbody>
