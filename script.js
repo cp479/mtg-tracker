@@ -323,8 +323,6 @@ async function fetchHeaderArt(cardName) {
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  fetchHeaderArt('Death Begets Life');
-
   const loading = document.getElementById('loading');
   const errorEl = document.getElementById('error');
 
@@ -335,6 +333,11 @@ document.addEventListener('DOMContentLoaded', () => {
       loading.hidden = true;
       try {
         const games = parseRows(results.data);
+
+        // Use the most recently played non-borrowed deck as the header art
+        const recentGame = [...games].reverse().find(g => !g.isBorrowed);
+        fetchHeaderArt(recentGame ? recentGame.deck : 'Death Begets Life');
+
         const { overall, deckStats } = aggregateStats(games);
         renderSummaryCards(overall);
         renderChart(deckStats);
