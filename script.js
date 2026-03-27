@@ -9,7 +9,12 @@ const DATE_REGEX =
 const SUMMARY_REGEX = /^\d+\s+(win|loss|draw|game)/i;
 
 // Decks to exclude entirely from all stats (test entries)
-const EXCLUDED_DECKS = new Set(['Naya Aggro']);
+const EXCLUDED_DECKS = new Set([
+  'Naya Aggro',
+  'Random cards from 10 play booster packs',
+  'Dimir Control',
+  'Toph, the First Metalbender',
+]);
 
 // Correct known typos / inconsistent spellings in the sheet
 const DECK_NAME_CORRECTIONS = {
@@ -116,11 +121,13 @@ function aggregateStats(games) {
     else if (g.result === 'Loss')  overall.losses++;
     else if (g.result === 'Draw')  overall.draws++;
 
-    // Include all decks (including borrowed) in per-deck breakdown
-    if (!byDeck[g.deck]) byDeck[g.deck] = { wins: 0, losses: 0, draws: 0 };
-    if (g.result === 'Win')        byDeck[g.deck].wins++;
-    else if (g.result === 'Loss')  byDeck[g.deck].losses++;
-    else if (g.result === 'Draw')  byDeck[g.deck].draws++;
+    // Exclude borrowed decks from per-deck breakdown
+    if (!g.isBorrowed) {
+      if (!byDeck[g.deck]) byDeck[g.deck] = { wins: 0, losses: 0, draws: 0 };
+      if (g.result === 'Win')        byDeck[g.deck].wins++;
+      else if (g.result === 'Loss')  byDeck[g.deck].losses++;
+      else if (g.result === 'Draw')  byDeck[g.deck].draws++;
+    }
   }
 
   overall.total = overall.wins + overall.losses + overall.draws;
