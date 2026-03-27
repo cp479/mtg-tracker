@@ -260,17 +260,7 @@ function buildChart(deckStats, sortKey) {
 }
 
 function renderChart(deckStats) {
-  buildChart(deckStats, 'winrate');
-
-  // Wire up sort buttons
-  document.querySelectorAll('.sort-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      buildChart(deckStats, btn.dataset.sort);
-    });
-  });
-
+  buildChart(deckStats, 'most-played');
   document.getElementById('chart-section').hidden = false;
 }
 
@@ -294,10 +284,6 @@ function renderTable(games) {
                      : g.result === 'Loss' ? 'badge-loss'
                      : 'badge-draw';
 
-    const opponentsHtml = g.opponents.length > 0
-      ? g.opponents.map(o => escapeHtml(o)).join('<br>')
-      : '—';
-
     const borrowedTag = g.isBorrowed
       ? '<span class="borrowed-tag">(borrowed)</span>'
       : '';
@@ -305,7 +291,6 @@ function renderTable(games) {
     tr.innerHTML = `
       <td style="white-space:nowrap">${escapeHtml(g.date)}</td>
       <td>${escapeHtml(g.deck)}${borrowedTag}</td>
-      <td>${opponentsHtml}</td>
       <td><span class="badge ${badgeClass}">${escapeHtml(g.result)}</span></td>
       <td>${escapeHtml(g.howWon) || '—'}</td>
     `;
