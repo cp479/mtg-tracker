@@ -315,9 +315,29 @@ function renderTable(games) {
   document.getElementById('table-section').hidden = false;
 }
 
+// ── Header art ───────────────────────────────────────────────────────────────
+
+async function fetchHeaderArt(cardName) {
+  try {
+    const res = await fetch(
+      `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+    const artUrl = data?.image_uris?.art_crop;
+    if (artUrl) {
+      document.querySelector('header').style.backgroundImage = `url(${artUrl})`;
+    }
+  } catch (e) {
+    // Silently fail — header falls back to solid colour
+  }
+}
+
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+  fetchHeaderArt('Death Begets Life');
+
   const loading = document.getElementById('loading');
   const errorEl = document.getElementById('error');
 
