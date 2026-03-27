@@ -210,13 +210,13 @@ function buildChart(deckStats, sortKey) {
         {
           label: 'Losses',
           data: losses,
-          backgroundColor: 'rgba(6, 78, 59, 0.85)',
+          backgroundColor: 'rgba(248, 113, 113, 0.85)',
           borderRadius: 2,
         },
         {
           label: 'Draws',
           data: draws,
-          backgroundColor: 'rgba(16, 124, 79, 0.5)',
+          backgroundColor: 'rgba(156, 163, 175, 0.6)',
           borderRadius: 2,
         },
       ]
