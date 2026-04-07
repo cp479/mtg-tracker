@@ -337,11 +337,18 @@ async function renderTable(games) {
 
 // ── Header art ───────────────────────────────────────────────────────────────
 
+// Override to a specific Scryfall card ID when a particular printing is preferred
+const HEADER_ART_OVERRIDES = {
+  'Xu-Ifit, Osteoharmonist': '98e7fb9e-44c2-4fa6-8d81-895f909ea9b7', // borderless full-art alternate
+};
+
 async function fetchHeaderArt(cardName) {
   try {
-    const res = await fetch(
-      `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`
-    );
+    const overrideId = HEADER_ART_OVERRIDES[cardName];
+    const url = overrideId
+      ? `https://api.scryfall.com/cards/${overrideId}`
+      : `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`;
+    const res = await fetch(url);
     if (!res.ok) return;
     const data = await res.json();
     const artUrl = data?.image_uris?.art_crop;
